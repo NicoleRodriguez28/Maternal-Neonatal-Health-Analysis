@@ -1,0 +1,491 @@
+---
+title: | 
+ A Statistical Insight into Maternal Smoking and Neonatal Health
+author: | 
+ | Nicole Rodriguez
+date: '04/24/25'
+output:
+  html_document:
+    code_folding: show
+    fig_caption: true
+    df_print: kable
+    theme: lumen
+    toc: true
+    toc_float:
+      collapsed: false
+  pdf_document:
+    toc: true
+---
+
+# Introduction
+
+> What impact does maternal smoking have on infant health outcomes?
+
+This analysis utilized the **babies** dataset from the **moderndive** package, which provides insight into maternal behaviors—particularly smoking—and their impact on infant health outcomes. The study investigated the influence of various maternal factors on birth weight and gestation period. Key variables analyzed included smoking status, race, income, education, marital status, gestation period, maternal age, and infant birth weight, as each plays a critical role in shaping infant health.
+
+Through a combination of static and interactive visualizations, the analysis identified meaningful patterns and associations among these variables. The visualizations used in this exploration include:
+
+To investigate these relationships, a variety of visualizations were used, including both static and interactive formats. Bar graphs compared infant birth weight across smoking statuses, smoking status across education levels, and birth weight across racial groups. Scatter plots illustrated the relationship between gestation period and birth weight, segmented by race and marital status. A violin plot was used to examine the number of cigarettes smoked daily in relation to parity, while a box plot visualized the relationship between family income and maternal age, broken down by smoking status.
+    
+Interactive Tableau visualizations added depth to the analysis, featuring a horizontal bar graph displaying maternal smoking status alongside demographic factors, and a bubble chart exploring the relationship between smoking and education level. Additionally, Canva visualizations such as a donut chart on smoking status by education, a treemap comparing family income with maternal age, and a pie chart highlighting the distribution of smoking across demographic groups helped further clarify the data.
+    
+This analysis is important because it highlights how maternal behaviors, like smoking, and socioeconomic factors can significantly impact infant health. The findings show that mothers who didn’t smoke during pregnancy tended to have babies with higher birth weights, especially those with higher income and education levels. Smoking was more common among younger, less-educated, and lower-income mothers, with lower birth weights seen in these groups. Understanding these patterns can help inform public health efforts to reduce smoking during pregnancy and improve birth outcomes.
+
+# Data
+## Load Libraries and Packages
+```{r, message=FALSE, warning=FALSE}
+# Load Required Libraries
+if (!require("moderndive"))
+  install.packages("moderndive")
+if (!require("mosaic"))
+  install.packages("mosaic")
+if (!require("tidyverse"))
+  install.packages("tidyverse")
+if (!require("ggplot2"))
+  install.packages("ggplot2")
+if (!require("plotly"))
+  install.packages("plotly")
+if (!require("dplyr"))
+  install.packages("dplyr")
+
+library(moderndive) # R data set packages
+library(mosaic) # Stats analysis
+library(tidyverse) # Data packages 
+library(ggplot2) # Data visualization
+library(plotly) # Interactive visualizations
+library(dplyr) # Data manipulation
+```
+
+### Description of data
+
+The `babies` dataset from the `moderndive` package includes detailed information on maternal smoking habits and infant health outcomes. It contains 1,236 observations, with variables such as birth weight, gestation period, smoking status, maternal education, age, race, and demographic details about the father.
+
+This dataset is important for its data that helps us explore how smoking during pregnancy may influence key infant health indicators like gestation length and birth weight, which are two critical factors that are closely monitored throughout pregnancy. It provides a valuable opportunity to analyze how maternal behaviors and demographics may affect the overall health of newborns.
+
+> R Package: `moderndive`
+
+> Data set: `babies`
+
+## Load and Clean Data
+```{r, message=FALSE, warning=FALSE}
+# Load data
+data("babies")
+
+# Dataset dimensions
+dim(babies)
+
+# Check & remove missing values 
+sum(is.na(babies))
+sum(is.null(babies))
+
+# Remove missing values
+babies_clean <- babies %>%
+  na.omit()
+
+# Updated dataset dimensions
+dim(babies_clean)
+
+# Subset variables needed
+babies_clean <- babies_clean[,c("wt", "smoke", "sex", "race", "ed", 
+                                "inc", "marital", "parity", "age", 
+                                "number", "gestation", "outcome")]
+
+# Updated dataset dimensions
+dim(babies_clean)
+
+# Remove unknown and NA data from dataset for graphing quality
+babies_clean <- babies_clean %>%
+  filter(inc < 98, smoke < 9, race < 10, age < 99, gestation < 999, 
+         wt < 999, parity < 99, ed < 9, inc < 98, number < 98)
+
+# Convert outcome variable to a factor
+babies_clean$outcome <- factor(babies_clean$outcome, 
+                               levels = c(1), 
+                               labels = c("Live Birth (Survived 28 Days)"))
+
+# Convert sex variable to a factor
+babies_clean$sex <- factor(babies_clean$sex, 
+                           levels = c(1, 2), 
+                           labels = c("Male", "Female"))
+```
+
+
+The original dataset contained 1,236 observations and 24 variables. While there were no missing values, I demonstrated the process for handling them in case they were present. After selecting the variables relevant to my analysis, the refined dataset now includes 1,236 observations and 12 variables.
+
+## Preview Data
+```{r, message=FALSE, warning=FALSE}
+# Top ten rows of the data
+head(babies_clean, 10)
+```
+
+## Variables
+```{r, message = FALSE, warning = FALSE}
+# Column names
+names(babies_clean)
+```
+
+
+The variables featured in this data analysis project are:
+
+1. `wt` - Infant’s birth weight (in ounces)
+
+2. `smoke` - Smoking status of the mother
+    - 0 = never smoked
+    - 1 = smokes now
+    - 2 = until current pregnancy
+    - 3 = smoked in the past, but not anymore
+
+3. `sex` - Infant's gender
+    - 1 = male
+    - 2 = female
+
+4. `race` - Reflects the mothers racial background
+    - 0-5 = White
+    - 6 = Mexican
+    - 7 = Black
+    - 8 = Asian
+    - 9 = Mixed
+
+5. `ed` - Education level of the mother
+    - 0 = less than 8th grade
+    - 1 = 8th - 12th grade (did not graduate)
+    - 2 = High school graduate (no  further schooling)
+    - 3 = High school + trade
+    - 4 = High school + some college
+    - 5 = College graduate
+    - 6 & 7 = Trade school HS unclear
+
+6. `inc` - Family’s annual income, categorized in $2,500 increments
+    - 0 = Less than $2,500
+    - 1 = $2,500 - $4,999
+    - 8 = $12,500 - $14,999
+    - 9 = $15,000 or more
+
+7. `marital` - Mother's marital status
+    - 0 = Legally separated
+    - 1 = Married
+    - 2 = Divorced
+    - 3 = Widowed
+    - 5 = Never married
+
+8. `parity` - Total number of previous pregnancies, including fetal deaths and stillbirths
+
+9. `age` - Mother’s age at the time of pregnancy termination (in years)
+
+10. `number` - Cigarettes smoked per day by past and current smokers
+    - 0 = Never smoked
+    - 1 = 1-4 cigarettes
+    - 2 = 5-9 cigarettes
+    - 3 = 10-14 cigarettes
+    - 4 = 15-19 cigarettes
+    - 5 = 20-29 cigarettes
+    - 6 = 30-39 cigarettes
+    - 7 = 40-60 cigarettes
+    - 8 = 60+ cigarettes
+    - 9 = smoke, but exact amount unknown
+    
+11. `gestation` - Length of gestation in days
+
+12. `outcome` - Indicator for live birth that survived for at least 28 days 
+    - 1 = live birth
+
+* * *
+
+# Data Analysis
+## Chart/Graphs
+
+```{r, message=FALSE, warning=FALSE}
+# Rename smoking status categories
+babies_clean$smokelab <- factor(babies_clean$smoke,
+                                levels = c(0, 1, 2, 3),
+                                labels = c("Never", "Smokes Now", 
+                                           "Until Current Pregnancy", 
+                                           "Once did, Not Now"))
+
+
+# Plot infant weight vs. smoking status colored by smoking status
+ggplot(babies_clean, aes(x = factor(smoke), y = wt, fill = smokelab)) +
+  # Plot
+  geom_col(position = "dodge") +
+  # Labels
+  labs(
+    title = "Infant Birth Weight vs. Smoking Status",
+    x = "Smoking Status",
+    y = "Weight (oz)",
+    fill = "Smoking Status"
+  ) + 
+  # Relabel x-axis text
+  scale_x_discrete(labels = c("Never", "Smokes Now", "Until Current Pregnancy", "Once did, Not Now", "Unknown")) +
+  # Color Palette
+  scale_fill_brewer(palette = "Pastel2") +
+  # Theme
+  theme_minimal() +
+  #Tilt x-axis labels by 45 degrees
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+  
+```
+
+The bar plot above illustrates the relationship between maternal smoking status and infant birth weight. This visualization highlights the impact of smoking on birth weight, showing a clear trend: mothers who have never smoked tend to have babies with higher birth weights compared to those in other smoking categories. Interestingly, mothers who previously smoked but quit also had infants with relatively higher birth weights. While the variations in birth weight may not be drastic, they still represent an important factor influencing the infant's overall health.
+
+> Mothers who have **never smoked** tend to have infants with **higher** birth weights compared to those in other smoking categories
+
+
+```{r, message=FALSE, warning=FALSE}
+# Rename race categories to combine 0-5 white
+babies_clean$race_updated <- factor(babies_clean$race,
+                                     levels = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+                                     labels = c("White", "White", "White", "White", "White", "White", 
+                                                "Mexican", "Black", "Asian", "Mixed"))
+
+# Interactive Scatterplot: Gestation vs. Birth Weight colored by Race
+intplot1 <- plot_ly(
+  # Data
+  data = babies_clean,
+  x = ~gestation,
+  y = ~wt,
+  color = ~race_updated,
+  text = ~paste("Race:", race_updated),
+  frame = ~race_updated # Use race for frames
+) %>%
+  # Add markers
+  add_markers %>%
+  # Add labels
+  layout(
+    title = "Gestation vs. Infant Weight by Race",
+    xaxis = list(title = "Gestation"),
+    yaxis = list(title = "Weight")
+  ) %>%
+  # Speed
+  animation_opts() %>%
+  # Add slider by race
+  animation_slider(currentvalue = list(prefix = "Race: "))
+
+# Print Interactive plot
+intplot1
+```
+
+
+
+The interactive scatterplot above illustrates the relationship between gestation period, infant birth weight, and the mother’s race. It reveals that Black women exhibit a wider range of gestation periods compared to other racial groups in this dataset. In contrast, the other races show a more consistent, linear pattern in gestation duration relative to birth weight.
+
+> **Black** mothers experience a **broader** range of gestation durations compared to other racial groups
+
+> **Asian** mothers tend to have infants with birth weights under 140 oz more frequently than other races
+
+
+```{r, message=FALSE, warning=FALSE}
+# Update education category labels
+babies_clean$ed_updated <- factor(babies_clean$ed,
+                                  levels = c(0, 1, 2, 3, 4, 5, 6, 7),
+                                  labels = c("Less than 8th grade", "8-12th, didn't graduate", "High School Graduate", "High School + Trade School", "High School + Some College", "College Graduate", "Trade School, HS Unclear", "Trade School, HS Unclear"))
+
+
+# Plot education level colored by smoking status
+ggplot(babies_clean, aes(y = ed_updated, fill = smokelab)) +
+  # Plot
+  geom_bar(position = "dodge", show.legend = TRUE) +
+  # Labels
+  labs(
+    title = "Smoking Status by Education Level",
+    x = "Count",
+    y = "Education Level",
+    fill = "Smoking Status",
+  ) +
+  # Color palette
+  scale_fill_brewer(palette = "Pastel2") +
+  # Theme
+  theme_minimal()
+```
+
+The horizontal bar plot above illustrates the distribution of mothers' education levels, categorized by smoking status. The following education levels show a higher proportion of mothers who have **never smoked**:
+
+- High School Graduate
+- High School + Some College
+- College Graduate
+
+On the other hand, mothers who attended **8th to 12th grade but did not graduate** are more likely to report currently smoking compared to other smoking categories.
+
+
+> In general, mothers with **higher levels of education**, including high school or college graduates, are more likely to report having never smoked
+
+
+```{r, message=FALSE, warning=FALSE}
+# Violin Plot: Number of Cigarettes Daily vs. Parity
+ggplot(babies_clean, aes(x = parity, y = number)) +
+  # Plot
+  geom_violin() +
+  # Labels
+  labs(
+    title = "Number of Cigarettes Smoked Daily vs. Parity", 
+    x = "Parity", 
+    y = "Number of Cigarettes Smoked Per Day") +
+  # Theme
+  theme_minimal()
+```
+
+The plot above shows the number of cigarettes smoked each day and the total number of previous pregnancies, including miscarriages and stillbirths. It highlights a peak in smoking behavior among mothers who have had about 5.5 previous pregnancies, indicating that these women tended to smoke a larger variety of cigarettes daily.
+
+> A clear peak in daily cigarette use is seen among mothers with a **parity** of around 5.5.
+
+
+```{r, message=FALSE, warning=FALSE}
+# Plot Race vs. infant weight colored by smoking status
+ggplot(babies_clean, aes (x = factor(race_updated), y = wt, fill = smokelab)) +
+  geom_col() +
+  # Labels
+  labs(
+    title = "Race vs. Infant Birth Weight",
+    x = "Race",
+    y = "Weight (oz)",
+    fill = "Smoking Status"
+  ) + 
+  # Color Palette
+  scale_fill_brewer(palette = "Pastel2") +
+  # Theme
+  theme_minimal() +
+  # Tilt x-axis labels by 45 degrees
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
+The bar plot above shows the relationship between race, smoking status, and infant birth weight. It allows us to see which smoking status is most common among different racial groups and how it affects birth weight. We can observe that white mothers tend to have infants with higher birth weights than other races, and they also report the highest numbers of never smoking or currently smoking during pregnancy. Black mothers report the second-highest birth weights.
+
+> White mothers have **higher** infant birth weights compared to the other racial groups
+
+> Black mothers report the second **highest** infant birth weights compared to Mexican, Asian, and Mixed races
+
+> Most racial groups report either **never smoking** smoking or **currently smokes** during pregnancy
+
+
+```{r, message=FALSE, warning=FALSE}
+# Update Marital status category names
+babies_clean$marital_updated <- factor(babies_clean$marital,
+                                  levels = c(0, 1, 2, 3, 5),
+                                  labels = c("Legally Separated", "Married", 
+                                             "Divorced", "Widowed", "Never Married"))
+
+# Interactive Scatterplot: Gestation vs. Birth Weight colored by Marital Status
+intplot2 <- plot_ly(
+  # Data
+  data = babies_clean,
+  x = ~gestation,
+  y = ~wt,
+  color = ~race_updated,
+  text = ~paste("Marital Status:", marital_updated, "\nRace: ", race_updated),
+  frame = ~marital_updated # Use marital status for frames
+) %>%
+  # Add markers
+  add_markers %>%
+  # Add labels
+  layout(
+    title = "Gestation vs. Infant Weight by Marital Status",
+    xaxis = list(title = "Gestation"),
+    yaxis = list(title = "Weight")
+  ) %>%
+  # Speed
+  animation_opts() %>%
+  # Add slider by marital status
+  animation_slider(currentvalue = list(prefix = "Marital Status: "))
+
+# Print Interactive plot
+intplot2
+```
+
+
+The interactive scatter plot above shows how the length of pregnancy (gestation period) and infant birth weight relate to marital status. Since marital status can influence decisions during pregnancy, this plot gives us useful insights into how it might affect both gestation and birth weight.
+
+We can clearly see that married women have more data points compared to other marital statuses. They also show more variation in both gestation length and birth weight, likely due to the larger number of observations.
+
+> **Married** women have a larger set of data and more variation in both gestation period and infant birth weight compared to other marital statuses
+
+```{r}
+# Boxplot: Income vs. Mothers Age by Smoking Status
+ggplot(babies_clean, aes(x = inc, y = age, color = smokelab)) +
+  # Boxplot
+  geom_boxplot() +
+  # Labels
+  labs(
+    title = "Family Yearly Income vs. Mothers Age by Smoking Status",
+    x = "Income",
+    y = "Age",
+    color = "Smoking Status"
+  ) +
+  # Theme
+  theme_minimal()
+```
+
+
+The box plot above shows how family income and the mother’s age relate to smoking status. It highlights how the mother’s age changes across different income levels and smoking statuses. We can see that as income decreases, the mother’s age tends to be younger, with similar age distributions across the income groups. Smoking status also varies with income. Women who smoke now are spread across a wider range, including lower-income groups.
+
+> Women who **Never Smoked** are more commonly found in the middle-income categories
+
+
+## Summary Statistics
+```{r, message = FALSE, warning = FALSE}
+# Summary statistics for each variable with favstats()
+favstats(~ wt, data = babies_clean)
+favstats(~ smoke, data = babies_clean)
+favstats(~ sex, data = babies_clean)
+favstats(~ race, data = babies_clean)
+favstats(~ ed, data = babies_clean)
+favstats(~ inc, data = babies_clean)
+favstats(~ marital, data = babies_clean)
+favstats(~ parity, data = babies_clean)
+favstats(~ age, data = babies_clean)
+favstats(~ number, data = babies_clean)
+favstats(~ gestation, data = babies_clean)
+favstats(~ outcome, data = babies_clean)
+
+# Birth weight by smoking status
+favstats(wt ~ smoke, data = babies_clean)
+
+# Gestation period by smoking status
+favstats(gestation ~ smoke, data = babies_clean)
+
+```
+
+From the summary statistics above, we can see the following average values for each quantitative variable:
+
+- `wt` = 119.6 oz
+- `parity` = 1.9
+- `age` = 27.4 years old
+- `gestation` = 286.9
+
+> The *average infant birth weight* for women who *never smoked* (122.8 oz) was **higher** than those who *smoked during their pregnancy* (114.1 oz)
+
+> The *average gestation period* for women who *never smoked* (287.6 days) was **higher** than those who *smoked during their pregnancy* (283.9 days)
+
+
+## Additional Analyses (Tableau):
+
+<div class='tableauPlaceholder' id='viz1745523270794' style='position: relative'><noscript><a href='#'><img alt='Maternal Smoking and Neonatal Health ' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Ma&#47;MaternalSmokingandNeonatalHealth&#47;Story1&#47;1_rss.png' style='border: none' /></a></noscript><object class='tableauViz'  style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' /> <param name='embed_code_version' value='3' /> <param name='site_root' value='' /><param name='name' value='MaternalSmokingandNeonatalHealth&#47;Story1' /><param name='tabs' value='no' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Ma&#47;MaternalSmokingandNeonatalHealth&#47;Story1&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /><param name='language' value='en-US' /></object></div> 
+
+
+```{js, embedcode, echo= FALSE}
+var divElement = document.getElementById('viz1745523270794');                    var vizElement = divElement.getElementsByTagName('object')[0];                    vizElement.style.width='100%';vizElement.style.height=(divElement.offsetWidth*0.75)+'px';                    var scriptElement = document.createElement('script');                    scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';                    vizElement.parentNode.insertBefore(scriptElement, vizElement);                     
+```
+
+URL Link to Tableau Story: [Nicole Rodriguez - Maternal Smoking & Neonatal Health](https://public.tableau.com/views/MaternalSmokingandNeonatalHealth/Story1?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link)
+
+* * *
+# Interactive Canva Information Hub
+<div style="position: relative; width: 100%; height: 0; padding-top: 56.2500%;
+ padding-bottom: 0; box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); margin-top: 1.6em; margin-bottom: 0.9em; overflow: hidden;
+ border-radius: 8px; will-change: transform;">
+  <iframe loading="lazy" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; border: none; padding: 0;margin: 0;"
+    src="https://www.canva.com/design/DAGlkqY3skc/-VMXEP6lVIvp9SI1URcq_A/view?embed" allowfullscreen="allowfullscreen" allow="fullscreen" data-external="1">
+  </iframe>
+</div>
+<a href="https:&#x2F;&#x2F;www.canva.com&#x2F;design&#x2F;DAGlkqY3skc&#x2F;-VMXEP6lVIvp9SI1URcq_A&#x2F;view?utm_content=DAGlkqY3skc&amp;utm_campaign=designshare&amp;utm_medium=embeds&amp;utm_source=link" target="_blank" rel="noopener">A Statistical Insight into Maternal Smoking and Neonatal Health</a> by Nicole Rodriguez
+
+* * *
+
+# References
+
+1. [Analyze Data](https://help.tableau.com/current/pro/desktop/en-us/data_explore_analyze_interact.htm)
+2. [Smoking During Pregnancy](https://pubmed.ncbi.nlm.nih.gov/35089538/)
+3. [Maternal Smoking](https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-018-1694-4#:~:text=Compared%20with%20infants%20born%20to%20nonsmoking%20mothers%2C%20mean%20birth%20weight,cigarettes%20per%20day%20during%20pregnancy.)
+4. [Marital Status & Pregnancy](https://pmc.ncbi.nlm.nih.gov/articles/PMC3288631/)
