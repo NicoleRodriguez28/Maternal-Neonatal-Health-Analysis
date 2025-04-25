@@ -23,4 +23,10 @@ Maternal health behaviors and socioeconomic factors play a crucial role in deter
 - plotly: Interactive visualizations
 - dplyr: Data manipulation
 
+## References
+1. Explore and inspect data in a view. (n.d.). Tableau. https://help.tableau.com/current/pro/desktop/en-us/data_explore_analyze_interact.htm
+2. Di, H. K., Gan, Y., Lu, K., Wang, C., Zhu, Y., Meng, X., Xia, W. Q., Xu, M. Z., Feng, J., Tian, Q. F., He, Y., Nie, Z. Q., Liu, J. A., Song, F. J., & Lu, Z. X. (2022). Maternal smoking status during pregnancy and low birth weight in offspring: systematic review and meta-analysis of 55 cohort studies published from 1986 to 2020. World journal of pediatrics : WJP, 18(3), 176–185. https://doi.org/10.1007/s12519-021-00501-5
+3. Kataoka, M.C., Carvalheira, A.P.P., Ferrari, A.P. et al. Smoking during pregnancy and harm reduction in birth weight: a cross-sectional study. BMC Pregnancy Childbirth 18, 67 (2018). https://doi.org/10.1186/s12884-018-1694-4
+4. El-Sayed, A. M., Tracy, M., & Galea, S. (2012). Life course variation in the relation between maternal marital status and preterm birth. Annals of epidemiology, 22(3), 168–174. https://doi.org/10.1016/j.annepidem.2012.01.002
+
 
