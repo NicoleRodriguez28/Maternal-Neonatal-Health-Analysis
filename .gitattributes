@@ -1,5 +1,5 @@
 *.R linguist-language=R
-*.Rmd linguist-language=RMarkdown
+*.Rmd linguist-language=R
 *.html linguist-language=HTML
 *.sql linguist-language=SQL
 *.py linguist-language=Python
